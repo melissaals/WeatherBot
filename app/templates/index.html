@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WeatherBot 🌤️</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+  <style>
+/* =====================================================
+   WeatherBot – Estilos Globais
+   ===================================================== */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0f172a;
+  --surface: #1e293b;
+  --surface2: #263348;
+  --border: #334155;
+  --accent: #38bdf8;
+  --accent2: #0ea5e9;
+  --text: #f1f5f9;
+  --text-muted: #94a3b8;
+  --bot-bubble: #1e293b;
+  --user-bubble: #0369a1;
+  --error: #ef4444;
+  --success: #22c55e;
+  --radius: 16px;
+  --shadow: 0 4px 24px rgba(0,0,0,.4);
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.app-wrapper {
+  width: 100%;
+  max-width: 760px;
+  height: 100dvh;
+  max-height: 860px;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+/* ---------- Header ---------- */
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 24px;
+  background: linear-gradient(135deg, #0c4a6e 0%, #0369a1 100%);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.header-icon { font-size: 2rem; }
+
+.header-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.header-subtitle {
+  font-size: 0.78rem;
+  color: #bae6fd;
+  margin-top: 2px;
+}
+
+/* ---------- Chat Container ---------- */
+.chat-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  scroll-behavior: smooth;
+}
+
+.chat-container::-webkit-scrollbar { width: 6px; }
+.chat-container::-webkit-scrollbar-track { background: transparent; }
+.chat-container::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+/* ---------- Mensagens ---------- */
+.message {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  animation: fadeSlideIn .25s ease both;
+}
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.user-message { flex-direction: row-reverse; }
+
+.message-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.message-bubble {
+  max-width: 75%;
+  background: var(--bot-bubble);
+  border: 1px solid var(--border);
+  border-radius: 18px 18px 18px 4px;
+  padding: 12px 16px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.user-message .message-bubble {
+  background: var(--user-bubble);
+  border-color: #0284c7;
+  border-radius: 18px 18px 4px 18px;
+  color: #fff;
+}
+
+/* ---------- Sugestões ---------- */
+.suggestion-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.chip {
+  background: var(--surface2);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  padding: 6px 14px;
+  border-radius: 99px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all .2s;
+  font-family: inherit;
+}
+
+.chip:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* ---------- Card de Clima ---------- */
+.weather-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  margin-top: 12px;
+}
+
+.weather-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.weather-icon { width: 48px; height: 48px; }
+
+.weather-city {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.weather-desc {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-transform: capitalize;
+  margin-top: 2px;
+}
+
+.weather-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.weather-stat {
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-label { font-size: 0.72rem; color: var(--text-muted); }
+.stat-value { font-size: 0.95rem; font-weight: 600; color: var(--text); }
+
+/* ---------- Card de Previsão ---------- */
+.forecast-days {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 8px;
+}
+
+.forecast-day {
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-align: center;
+}
+
+.forecast-label { font-size: 0.8rem; font-weight: 600; color: var(--text); }
+.forecast-date  { font-size: 0.7rem; color: var(--text-muted); }
+.forecast-icon  { width: 42px; height: 42px; }
+.forecast-desc  { font-size: 0.7rem; color: var(--text-muted); text-transform: capitalize; min-height: 2em; }
+.forecast-temp  { font-size: 0.85rem; font-weight: 600; }
+.forecast-temp .min { color: #7dd3fc; }
+.forecast-temp .max { color: #fca5a5; }
+.forecast-rain  { font-size: 0.72rem; color: var(--accent); }
+
+.message-bubble h3 { font-size: 0.95rem; margin: 6px 0 2px; color: var(--accent); }
+.message-bubble hr { border: none; border-top: 1px solid var(--border); margin: 8px 0; }
+
+.tool-badge.no-tool {
+  background: rgba(148, 163, 184, .08);
+  border-color: rgba(148, 163, 184, .25);
+}
+
+/* ---------- Badge de Ferramenta ---------- */
+.tool-badge {
+  margin-top: 10px;
+  padding: 6px 10px;
+  background: rgba(56, 189, 248, .08);
+  border: 1px solid rgba(56, 189, 248, .25);
+  border-radius: 8px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tool-badge code {
+  font-family: 'Courier New', monospace;
+  color: var(--accent);
+  background: rgba(56, 189, 248, .12);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
+
+/* ---------- Typing Indicator ---------- */
+.typing-bubble {
+  padding: 14px 18px !important;
+}
+
+.typing-dots {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.typing-dots span {
+  width: 7px;
+  height: 7px;
+  background: var(--text-muted);
+  border-radius: 50%;
+  animation: bounce 1.2s infinite;
+}
+
+.typing-dots span:nth-child(2) { animation-delay: .2s; }
+.typing-dots span:nth-child(3) { animation-delay: .4s; }
+
+@keyframes bounce {
+  0%, 80%, 100% { transform: translateY(0); opacity: .4; }
+  40%            { transform: translateY(-6px); opacity: 1; }
+}
+
+/* ---------- Input Area ---------- */
+.input-area {
+  padding: 14px 16px 10px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.input-form {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.input-field {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 12px 20px;
+  font-size: 0.9rem;
+  color: var(--text);
+  font-family: inherit;
+  outline: none;
+  transition: border-color .2s;
+}
+
+.input-field::placeholder { color: var(--text-muted); }
+.input-field:focus { border-color: var(--accent); }
+.input-field:disabled { opacity: .5; cursor: not-allowed; }
+
+.send-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: opacity .2s, transform .15s;
+}
+
+.send-btn:hover:not(:disabled) { opacity: .9; transform: scale(1.05); }
+.send-btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+
+.input-hint {
+  text-align: center;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: 8px;
+}
+
+/* ---------- Responsivo ---------- */
+@media (max-width: 600px) {
+  .app-wrapper { border-radius: 0; max-height: 100dvh; }
+  .message-bubble { max-width: 90%; }
+  .weather-grid { grid-template-columns: repeat(2, 1fr); }
+}
+  </style>
+</head>
+<body>
+  <div class="app-wrapper">
+    <!-- Cabeçalho -->
+    <header class="app-header">
+      <div class="header-icon">🌤️</div>
+      <div>
+        <h1 class="header-title">WeatherBot</h1>
+        <p class="header-subtitle">Sistema de Consulta Meteorológica em Tempo Real</p>
+      </div>
+    </header>
+
+    <!-- Chat -->
+    <main class="chat-container" id="chatContainer">
+      <!-- Mensagem de boas-vindas -->
+      <div class="message bot-message" id="welcomeMsg">
+        <div class="message-avatar">🤖</div>
+        <div class="message-bubble">
+          <p>Olá! Sou o <strong>WeatherBot</strong>. Posso te informar sobre o clima em qualquer cidade do mundo! 🌍</p>
+          <p style="margin-top: 8px;">Tente perguntar:</p>
+          <div class="suggestion-chips">
+            <button class="chip" onclick="sendSuggestion('Como está o clima em São Paulo?')">🌆 São Paulo</button>
+            <button class="chip" onclick="sendSuggestion('Qual a temperatura em Tokyo agora?')">🗼 Tokyo</button>
+            <button class="chip" onclick="sendSuggestion('Vai chover em Londres hoje?')">🌧️ Londres</button>
+            <button class="chip" onclick="sendSuggestion('Qual a previsão para os próximos 3 dias no Rio de Janeiro?')">📅 Previsão Rio</button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Input -->
+    <footer class="input-area">
+      <form class="input-form" id="chatForm" onsubmit="sendMessage(event)">
+        <input
+          type="text"
+          id="userInput"
+          class="input-field"
+          placeholder="Pergunte sobre o clima de qualquer cidade..."
+          autocomplete="off"
+          maxlength="500"
+        />
+        <button type="submit" class="send-btn" id="sendBtn" title="Enviar">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </form>
+      <p class="input-hint">Pressione Enter para enviar sua pergunta</p>
+    </footer>
+  </div>
+
+  <script>
+    const chatContainer = document.getElementById('chatContainer');
+    const userInput = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+
+    function scrollToBottom() {
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    // Escapa HTML para que texto vindo do LLM/API nunca seja interpretado como código
+    function esc(value) {
+      return String(value ?? '').replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      })[c]);
+    }
+
+    function formatMarkdown(text) {
+      if (!text) return '';
+      return esc(text)
+        .replace(/^\s*#{1,6}\s+(.*)$/gm, '<h3>$1</h3>')       // títulos
+        .replace(/^\s*(-{3,}|\*{3,})\s*$/gm, '<hr/>')          // separadores
+        .replace(/^\s*[*-]\s+(.*)$/gm, '• $1')                 // listas
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')      // negrito
+        .replace(/\*(\S(?:.*?\S)?)\*/g, '<em>$1</em>')         // itálico
+        .replace(/\n/g, '<br/>')
+        .replace(/<br\/>\s*(<h3>|<hr\/>)/g, '$1')
+        .replace(/(<\/h3>|<hr\/>)<br\/>/g, '$1');
+    }
+
+    function iconUrl(icon) {
+      return `https://openweathermap.org/img/wn/${encodeURIComponent(icon)}@2x.png`;
+    }
+
+    function formatForecastCard(r) {
+      const days = (r.days || []).map(d => `
+        <div class="forecast-day">
+          <span class="forecast-label">${esc(d.label)}</span>
+          <span class="forecast-date">${esc(d.date)}</span>
+          <img src="${iconUrl(d.icon)}" alt="${esc(d.description)}" class="forecast-icon" />
+          <span class="forecast-desc">${esc(d.description)}</span>
+          <span class="forecast-temp"><span class="min">${esc(d.temp_min)}°</span> / <span class="max">${esc(d.temp_max)}°</span></span>
+          <span class="forecast-rain">☔ ${esc(d.rain_chance)}%${d.rain_mm > 0 ? ` · ${esc(d.rain_mm)} mm` : ''}</span>
+        </div>`).join('');
+      return `
+        <div class="weather-card">
+          <div class="weather-header">
+            <span style="font-size:1.6rem">📅</span>
+            <div>
+              <div class="weather-city">Previsão · ${esc(r.city)}${r.country ? ', ' + esc(r.country) : ''}</div>
+              <div class="weather-desc" style="text-transform:none">Mínima / máxima (${esc(r.unit_symbol)}) e chance de chuva</div>
+            </div>
+          </div>
+          <div class="forecast-days">${days}</div>
+        </div>
+      `;
+    }
+
+    function formatWeatherCard(toolResult) {
+      if (!toolResult || toolResult.error) return '';
+      const r = toolResult;
+      if (r.type === 'forecast') return formatForecastCard(r);
+      const u = esc(r.unit_symbol);
+      return `
+        <div class="weather-card">
+          <div class="weather-header">
+            <img src="${iconUrl(r.icon)}" alt="ícone clima" class="weather-icon" />
+            <div>
+              <div class="weather-city">Agora · ${esc(r.city)}, ${esc(r.country)}</div>
+              <div class="weather-desc">${esc(r.description)}</div>
+            </div>
+          </div>
+          <div class="weather-grid">
+            <div class="weather-stat">
+              <span class="stat-label">🌡️ Temperatura</span>
+              <span class="stat-value">${esc(r.temperature)}${u}</span>
+            </div>
+            <div class="weather-stat">
+              <span class="stat-label">🤔 Sensação</span>
+              <span class="stat-value">${esc(r.feels_like)}${u}</span>
+            </div>
+            <div class="weather-stat">
+              <span class="stat-label">⬇️ Mínima</span>
+              <span class="stat-value">${esc(r.temp_min)}${u}</span>
+            </div>
+            <div class="weather-stat">
+              <span class="stat-label">⬆️ Máxima</span>
+              <span class="stat-value">${esc(r.temp_max)}${u}</span>
+            </div>
+            <div class="weather-stat">
+              <span class="stat-label">💧 Umidade</span>
+              <span class="stat-value">${esc(r.humidity)}%</span>
+            </div>
+            <div class="weather-stat">
+              <span class="stat-label">💨 Vento</span>
+              <span class="stat-value">${esc(r.wind_speed)} ${esc(r.wind_unit || 'km/h')}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // toolsUsed: null = não exibir badge (mensagens do usuário/erros); [] = LLM respondeu sem ferramenta
+    function addMessage(role, text, toolResults = null, toolsUsed = null) {
+      const isBot = role === 'bot';
+      const div = document.createElement('div');
+      div.className = `message ${isBot ? 'bot-message' : 'user-message'}`;
+
+      const avatar = document.createElement('div');
+      avatar.className = 'message-avatar';
+      avatar.textContent = isBot ? '🤖' : '👤';
+
+      const bubble = document.createElement('div');
+      bubble.className = 'message-bubble';
+
+      // Texto principal formatado
+      const p = document.createElement('p');
+      p.innerHTML = formatMarkdown(text);
+      bubble.appendChild(p);
+
+      // Card(s) de clima atual / previsão (uma ou várias consultas)
+      (toolResults || []).forEach(r => {
+        if (r && !r.error) bubble.insertAdjacentHTML('beforeend', formatWeatherCard(r));
+      });
+
+      // Badge com a(s) ferramenta(s) selecionada(s) pelo LLM
+      if (Array.isArray(toolsUsed)) {
+        const badge = document.createElement('div');
+        if (toolsUsed.length > 0) {
+          badge.className = 'tool-badge';
+          const label = toolsUsed.length > 1 ? 'Ferramentas usadas:' : 'Ferramenta usada:';
+          badge.innerHTML = `<span>⚙️ ${label}</span> ` +
+            toolsUsed.map(t => `<code>${esc(t)}()</code>`).join(' ');
+        } else {
+          badge.className = 'tool-badge no-tool';
+          badge.innerHTML = '<span>💬 Nenhuma ferramenta acionada — resposta direta do LLM</span>';
+        }
+        bubble.appendChild(badge);
+      }
+
+      if (isBot) {
+        div.appendChild(avatar);
+        div.appendChild(bubble);
+      } else {
+        div.appendChild(bubble);
+        div.appendChild(avatar);
+      }
+
+      chatContainer.appendChild(div);
+      scrollToBottom();
+    }
+
+    function addTypingIndicator() {
+      const div = document.createElement('div');
+      div.className = 'message bot-message typing-indicator-wrapper';
+      div.id = 'typingIndicator';
+      div.innerHTML = `
+        <div class="message-avatar">🤖</div>
+        <div class="message-bubble typing-bubble">
+          <div class="typing-dots">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+      `;
+      chatContainer.appendChild(div);
+      scrollToBottom();
+    }
+
+    function removeTypingIndicator() {
+      const indicator = document.getElementById('typingIndicator');
+      if (indicator) indicator.remove();
+    }
+
+    function setLoading(loading) {
+      sendBtn.disabled = loading;
+      userInput.disabled = loading;
+      sendBtn.classList.toggle('loading', loading);
+    }
+
+    async function sendMessage(event) {
+      event.preventDefault();
+      const message = userInput.value.trim();
+      if (!message) return;
+
+      userInput.value = '';
+      setLoading(true);
+
+      addMessage('user', message);
+      addTypingIndicator();
+
+      const apiUrl = (window.location.protocol.startsWith('http') && window.location.port === '8000')
+        ? '/chat'
+        : 'http://127.0.0.1:8000/chat';
+
+      try {
+        const res = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message })
+        });
+
+        removeTypingIndicator();
+        const data = await res.json();
+
+        if (!res.ok || (data.error && !data.response)) {
+          addMessage('bot', `❌ **Erro:** ${data.error || 'Erro desconhecido.'}`);
+        } else {
+          addMessage('bot', data.response, data.tool_results, data.tools_used || []);
+        }
+      } catch (err) {
+        removeTypingIndicator();
+        addMessage('bot', `❌ Falha na comunicação com o servidor (${err.message}). Certifique-se de acessar por **http://localhost:8000** com o servidor ativo.`);
+      } finally {
+        setLoading(false);
+        userInput.focus();
+      }
+    }
+
+    function sendSuggestion(text) {
+      userInput.value = text;
+      chatContainer.querySelector('#welcomeMsg .suggestion-chips')?.remove();
+      document.getElementById('chatForm').dispatchEvent(new Event('submit'));
+    }
+
+    userInput.focus();
+  </script>
+</body>
+</html>
